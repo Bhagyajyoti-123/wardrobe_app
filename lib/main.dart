@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'providers/wardrobe_provider.dart';
 import 'providers/auth_provider.dart';
@@ -10,9 +11,17 @@ import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseFirestore.instance.settings =
+      const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
   runApp(
     MultiProvider(
       providers: [
@@ -54,7 +63,30 @@ class MyApp extends StatelessWidget {
       ),
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          if (auth.isLoggedIn) return const HomeScreen();
+          // Show loading while Firebase
+          // checks auth state
+          if (!auth.initialized) {
+            return const Scaffold(
+              backgroundColor: Color(0xFF6C63FF),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.checkroom_rounded,
+                        size: 64,
+                        color: Colors.white),
+                    SizedBox(height: 24),
+                    CircularProgressIndicator(
+                        color: Colors.white),
+                  ],
+                ),
+              ),
+            );
+          }
+          if (auth.isLoggedIn) {
+            return const HomeScreen();
+          }
           return const LoginScreen();
         },
       ),

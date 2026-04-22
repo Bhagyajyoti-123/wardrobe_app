@@ -4,9 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoggedIn = false;
+  bool _initialized = false;
   String _username = '';
 
   bool get isLoggedIn => _isLoggedIn;
+  bool get initialized => _initialized;
   String get username => _username;
 
   AuthProvider() {
@@ -23,6 +25,7 @@ class AuthProvider with ChangeNotifier {
         _isLoggedIn = false;
         _username = '';
       }
+      _initialized = true;
       notifyListeners();
     });
   }
@@ -37,7 +40,7 @@ class AuthProvider with ChangeNotifier {
       );
       return true;
     } on FirebaseAuthException catch (e) {
-      debugPrint('Login error: ${e.code} ${e.message}');
+      debugPrint('Login: ${e.code}');
       return false;
     }
   }
@@ -54,8 +57,7 @@ class AuthProvider with ChangeNotifier {
       await cred.user?.updateDisplayName(username);
       return true;
     } on FirebaseAuthException catch (e) {
-      debugPrint(
-          'Register error: ${e.code} ${e.message}');
+      debugPrint('Register: ${e.code}');
       return false;
     }
   }

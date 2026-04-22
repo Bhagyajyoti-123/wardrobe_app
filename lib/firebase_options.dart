@@ -8,13 +8,13 @@ class DefaultFirebaseOptions {
     return web;
   }
 
-static const FirebaseOptions web = FirebaseOptions(
+  static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyD7DT5ZT9nLQpsfS58LelmGHs-q2kg6Kag',
     appId: '1:384938342662:web:d8edc0b1ec63062e4c8687',
     messagingSenderId: '384938342662',
-    projectId: 'wardrobe-app-7ca0',
+    projectId: 'wardrobe-app-7ca08',
     authDomain: 'wardrobe-app-7ca08.firebaseapp.com',
     storageBucket: 'wardrobe-app-7ca08.firebasestorage.app',
-  
+    measurementId: 'G-EEVVZ83X1P',
   );
 }

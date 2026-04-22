@@ -8,10 +8,13 @@ class WardrobeProvider with ChangeNotifier {
   List<ClothingItem> _items = [];
   String _selectedCategory = 'All';
   final _uuid = const Uuid();
+  bool _loading = false;
+  String? _currentUid;
+
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _loading = false;
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
 
   List<ClothingItem> get items =>
       _selectedCategory == 'All'
@@ -37,39 +40,47 @@ class WardrobeProvider with ChangeNotifier {
   }
 
   WardrobeProvider() {
-    _auth.authStateChanges().listen((user) async {
+    _auth.authStateChanges().listen((user) {
       if (user != null) {
-        await _loadItems();
+        // Only reload if different user
+        if (_currentUid != user.uid) {
+          _currentUid = user.uid;
+          _loadItems();
+        }
       } else {
+        _currentUid = null;
         _items = [];
         _selectedCategory = 'All';
+        _loading = false;
         notifyListeners();
       }
     });
   }
 
-  String? get _uid => _auth.currentUser?.uid;
-
   CollectionReference<Map<String, dynamic>>?
       get _col {
-    if (_uid == null) return null;
+    if (_currentUid == null) return null;
     return _firestore
         .collection('users')
-        .doc(_uid)
+        .doc(_currentUid)
         .collection('wardrobe');
   }
 
   Future<void> _loadItems() async {
+    if (_col == null) return;
     try {
       _loading = true;
       notifyListeners();
-      if (_col == null) return;
+
       final snap = await _col!.get();
       _items = snap.docs
           .map((d) => ClothingItem.fromMap(d.data()))
           .toList();
       _items.sort(
           (a, b) => a.name.compareTo(b.name));
+
+      debugPrint(
+          'Loaded ${_items.length} items for $_currentUid');
     } catch (e) {
       debugPrint('Load error: $e');
     } finally {
@@ -78,7 +89,6 @@ class WardrobeProvider with ChangeNotifier {
     }
   }
 
-  // ADD INSTANTLY to UI, save to Firestore in background
   void addItem(
       String name,
       String category,
@@ -96,13 +106,13 @@ class WardrobeProvider with ChangeNotifier {
       imageUrl: imageBase64,
     );
 
-    // Show instantly — no await
     _items.add(item);
     _items.sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
 
-    // Save to Firestore in background
-    _col!.doc(item.id).set(item.toMap()).catchError(
+    _col!.doc(item.id).set(item.toMap()).then((_) {
+      debugPrint('Saved: ${item.name}');
+    }).catchError(
         (e) => debugPrint('Save error: $e'));
   }
 
